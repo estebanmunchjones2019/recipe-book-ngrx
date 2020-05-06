@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
-
-import { DataStorageService } from '../shared/data-storage.service';
-import { AuthService } from '../auth/auth.service';
+import { Store } from '@ngrx/store';
 import { Router } from '@angular/router';
+
+import * as fromApp from '../store/app.reducer';
+import * as AuthActions from '../auth/store/auth.actions';
+import * as RecipeActions from '../recipes/store/recipe.actions';
 
 @Component({
   selector: 'app-header',
@@ -14,32 +16,31 @@ export class HeaderComponent implements OnInit {
   userSub: Subscription;
   isAuthenticated: boolean = false;
 
-  constructor(private dataStorageService: DataStorageService,
-              private authService: AuthService,
-              private router: Router) { }
+  constructor(private store: Store<fromApp.AppState>) { } 
 
   ngOnInit(): void {
-    this.userSub = this.authService.user.subscribe(user => {
-      this.isAuthenticated = !!user   //!user ? false : true;
+    this.userSub = this.store.select('auth').subscribe(authState => {
+      this.isAuthenticated = !!authState.user   //!user ? false : true;
     })
   }
 
   onSave() {
-    this.dataStorageService.storeRecipes();
+    // this.dataStorageService.storeRecipes();
+    this.store.dispatch(new RecipeActions.StoreRecipes());
   }
 
   onFetch() {
-    this.dataStorageService.fetchRecipes().subscribe(); // I subscribe here because I also subscribe in the RecipesResolverService, and the GET request was returned in the DataStorageService
+    // this.dataStorageService.fetchRecipes().subscribe(); // I subscribe here because I also subscribe in the RecipesResolverService, and the GET request was returned in the DataStorageService
+    this.store.dispatch(new RecipeActions.FetchRecipes());
   }
 
   onLogout() {
-    this.authService.logout();
-    this.router.navigate(['/auth']);
+    this.store.dispatch(new AuthActions.Logout());
 
   }
 
   ngOnDestroy() {
-    this.userSub.unsubscribe(); 
+    this.userSub.unsubscribe();  
   }
 
 }
